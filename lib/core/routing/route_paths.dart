@@ -89,6 +89,26 @@ class RoutePaths {
   static const communityChat = '/communities/:id/chat';
   static String communityChatOf(String id) => '/communities/$id/chat';
 
+  /// Team/community chats key off their parent id, not the conversation id
+  /// itself, so a `message` notification's `data` payload (see the
+  /// `notify_new_message` trigger, migration 0053) needs a bit of branching
+  /// to land on the right screen — shared here so the in-app Notifications
+  /// screen and `PushNotificationService`'s tap navigation always agree.
+  static String? chatRouteForMessageData(Map<String, dynamic> data) {
+    final conversationType = data['conversation_type'] as String?;
+    final teamRequirementId = data['team_requirement_id'] as String?;
+    final communityId = data['community_id'] as String?;
+    final conversationId = data['conversation_id'] as String?;
+    if (conversationType == 'team' && teamRequirementId != null) {
+      return teamChatOf(teamRequirementId);
+    }
+    if (conversationType == 'community' && communityId != null) {
+      return communityChatOf(communityId);
+    }
+    if (conversationId != null) return chatOf(conversationId);
+    return null;
+  }
+
   static const events = '/events';
   static const newEvent = '/events/new';
   static const eventDetail = '/events/:id';

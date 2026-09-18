@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/responsive.dart';
+import '../../../../core/widgets/form_section_card.dart';
 import '../../../../core/widgets/loading_state.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../../../profile/presentation/providers/profile_providers.dart';
 import '../../domain/entities/local_entities.dart';
 import '../providers/local_providers.dart';
@@ -166,93 +168,164 @@ class _LocalSetupScreenState extends ConsumerState<LocalSetupScreen> {
         ref.watch(localControllerProvider).isLoading || _resolvingLocation;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Local Settings')),
+      backgroundColor: HomeStyle.background,
+      appBar: AppBar(
+        backgroundColor: HomeStyle.background,
+        title: const Text('Local Settings',
+            style: TextStyle(color: HomeStyle.textPrimary)),
+        iconTheme: const IconThemeData(color: HomeStyle.textPrimary),
+      ),
       body: localProfileAsync.when(
         loading: () => const LoadingState(),
-        error: (e, _) => Center(child: Text(e.toString())),
+        error: (e, _) => Center(
+            child: Text(e.toString(),
+                style: const TextStyle(color: HomeStyle.textSecondary))),
         data: (profile) {
           _hydrate(profile);
           return ResponsiveCenter(
             maxWidth: 560,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    activeThumbColor: AppColors.localAccent,
-                    title: const Text('Enable Local discovery'),
-                    subtitle: const Text(
-                        'Appear to compatible people nearby for 1-to-1 meetups'),
-                    value: _enabled,
-                    onChanged: (v) => setState(() => _enabled = v),
-                  ),
-                  const Divider(height: 32),
-                  TextField(
-                      controller: _cityController,
-                      decoration: const InputDecoration(labelText: 'City')),
-                  const SizedBox(height: 12),
-                  TextField(
-                      controller: _areaController,
-                      decoration: const InputDecoration(
-                          labelText: 'Neighborhood / area')),
-                  const SizedBox(height: 16),
-                  Text('Search radius: ${_radiusKm.round()} km',
-                      style: context.textStyles.titleSmall),
-                  Slider(
-                    value: _radiusKm,
-                    min: 1,
-                    max: 25,
-                    divisions: 24,
-                    activeColor: AppColors.localAccent,
-                    label: '${_radiusKm.round()} km',
-                    onChanged: (v) => setState(() => _radiusKm = v),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _bioController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                        labelText: 'A little about you (casual)',
-                        alignLabelWithHint: true),
-                  ),
-                  const SizedBox(height: 20),
-                  Text('What are you up for?',
-                      style: context.textStyles.titleSmall),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                  FormSectionCard(
+                    icon: Icons.near_me_outlined,
+                    title: 'Local discovery',
                     children: [
-                      for (final activity in _activityOptions)
-                        FilterChip(
-                          label: Text(activity),
-                          selected: _activities.contains(activity),
-                          selectedColor:
-                              AppColors.localAccent.withValues(alpha: 0.2),
-                          onSelected: (selected) => setState(() {
-                            selected
-                                ? _activities.add(activity)
-                                : _activities.remove(activity);
-                          }),
-                        ),
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Enable Local discovery',
+                                    style: TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: HomeStyle.textPrimary)),
+                                SizedBox(height: 2),
+                                Text(
+                                    'Appear to compatible people nearby for 1-to-1 meetups',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: HomeStyle.textSecondary)),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _enabled,
+                            onChanged: (v) => setState(() => _enabled = v),
+                            activeThumbColor: Colors.white,
+                            activeTrackColor: AppColors.localAccent,
+                            inactiveThumbColor: HomeStyle.textSecondary,
+                            inactiveTrackColor:
+                                Colors.white.withValues(alpha: 0.10),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.localAccent),
-                      onPressed: isSaving ? null : _save,
-                      child: isSaving
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white))
-                          : const Text('Save'),
+                  FormSectionCard(
+                    icon: Icons.place_outlined,
+                    title: 'Where you are',
+                    children: [
+                      TextField(
+                        controller: _cityController,
+                        style: const TextStyle(color: HomeStyle.textPrimary),
+                        decoration: darkInputDecoration('City'),
+                      ),
+                      TextField(
+                        controller: _areaController,
+                        style: const TextStyle(color: HomeStyle.textPrimary),
+                        decoration: darkInputDecoration('Neighborhood / area'),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Search radius: ${_radiusKm.round()} km',
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: HomeStyle.textPrimary)),
+                          SliderTheme(
+                            data: SliderTheme.of(context).copyWith(
+                              activeTrackColor: AppColors.localAccent,
+                              inactiveTrackColor:
+                                  Colors.white.withValues(alpha: 0.12),
+                              thumbColor: AppColors.localAccent,
+                              overlayColor:
+                                  AppColors.localAccent.withValues(alpha: 0.2),
+                              valueIndicatorColor: AppColors.localAccent,
+                            ),
+                            child: Slider(
+                              value: _radiusKm,
+                              min: 1,
+                              max: 25,
+                              divisions: 24,
+                              label: '${_radiusKm.round()} km',
+                              onChanged: (v) => setState(() => _radiusKm = v),
+                            ),
+                          ),
+                        ],
+                      ),
+                      TextField(
+                        controller: _bioController,
+                        maxLines: 3,
+                        style: const TextStyle(color: HomeStyle.textPrimary),
+                        decoration:
+                            darkInputDecoration('A little about you (casual)'),
+                      ),
+                    ],
+                  ),
+                  FormSectionCard(
+                    icon: Icons.local_activity_outlined,
+                    title: 'What are you up for?',
+                    children: [
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final activity in _activityOptions)
+                            _ActivityChip(
+                              label: activity,
+                              selected: _activities.contains(activity),
+                              onTap: () => setState(() {
+                                _activities.contains(activity)
+                                    ? _activities.remove(activity)
+                                    : _activities.add(activity);
+                              }),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(14),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: isSaving ? null : _save,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.localAccent,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                            : const Text('Save',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700)),
+                      ),
                     ),
                   ),
                 ],
@@ -260,6 +333,45 @@ class _LocalSetupScreenState extends ConsumerState<LocalSetupScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _ActivityChip extends StatelessWidget {
+  const _ActivityChip(
+      {required this.label, required this.selected, required this.onTap});
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(100),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(100),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.localAccent.withValues(alpha: 0.18)
+                : Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(100),
+            border: Border.all(
+                color: selected
+                    ? AppColors.localAccent
+                    : Colors.white.withValues(alpha: 0.12)),
+          ),
+          child: Text(label,
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? AppColors.localAccent : HomeStyle.textSecondary)),
+        ),
       ),
     );
   }

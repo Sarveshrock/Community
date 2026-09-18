@@ -6,6 +6,8 @@ import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/models/skill.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../core/widgets/form_section_card.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../providers/interview_practice_providers.dart';
 
 class EditInterviewPracticeProfileScreen extends ConsumerStatefulWidget {
@@ -79,102 +81,207 @@ class _EditInterviewPracticeProfileScreenState
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Practice Profile')),
+      backgroundColor: HomeStyle.background,
+      appBar: AppBar(
+        backgroundColor: HomeStyle.background,
+        title: const Text('Practice Profile',
+            style: TextStyle(color: HomeStyle.textPrimary)),
+        iconTheme: const IconThemeData(color: HomeStyle.textPrimary),
+      ),
       body: ResponsiveCenter(
         maxWidth: 560,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Join the mock-interview practice pool so other members can find and pair with you.',
-                  style: context.textStyles.bodyMedium
-                      ?.copyWith(color: context.colors.onSurfaceVariant),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _roleController,
-                  decoration:
-                      const InputDecoration(labelText: 'Role you\'re practicing for'),
-                  validator: (v) => Validators.required(v, fieldName: 'Target role'),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<ExperienceLevel>(
-                  initialValue: _level,
-                  decoration: const InputDecoration(labelText: 'Experience level'),
-                  items: [
-                    for (final l in ExperienceLevel.values)
-                      DropdownMenuItem(value: l, child: Text(l.label))
-                  ],
-                  onChanged: (v) => setState(() => _level = v ?? _level),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _availabilityController,
-                  decoration: const InputDecoration(
-                      labelText: 'Availability (optional)',
-                      hintText: 'e.g. Weekday evenings, IST'),
-                ),
-                const SizedBox(height: 16),
-                Text('Topics', style: context.textStyles.titleSmall),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _topicController,
-                        decoration: const InputDecoration(
-                            labelText: 'Add a topic', hintText: 'e.g. System Design'),
-                        onSubmitted: (_) => _addTopic(),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                        onPressed: _addTopic, icon: const Icon(Icons.add_circle_outline)),
-                  ],
-                ),
-                if (_topics.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final topic in _topics)
-                        Chip(
-                          label: Text(topic),
-                          onDeleted: () => setState(() => _topics.remove(topic)),
-                        ),
-                    ],
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    'Join the mock-interview practice pool so other members can find and pair with you.',
+                    style: TextStyle(
+                        fontSize: 13, color: HomeStyle.textSecondary),
                   ),
-                ],
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Visible in the practice pool'),
-                  value: _isActive,
-                  onChanged: (v) => setState(() => _isActive = v),
                 ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: isSaving ? null : _submit,
-                    child: isSaving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
-                        : const Text('Save'),
+                const SizedBox(height: 14),
+                FormSectionCard(
+                  icon: Icons.record_voice_over_outlined,
+                  title: 'Practice profile',
+                  children: [
+                    TextFormField(
+                      controller: _roleController,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration:
+                          darkInputDecoration('Role you\'re practicing for'),
+                      validator: (v) =>
+                          Validators.required(v, fieldName: 'Target role'),
+                    ),
+                    DropdownButtonFormField<ExperienceLevel>(
+                      isExpanded: true,
+                      initialValue: _level,
+                      dropdownColor: HomeStyle.cardBase,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration: darkInputDecoration('Experience level'),
+                      items: [
+                        for (final l in ExperienceLevel.values)
+                          DropdownMenuItem(value: l, child: Text(l.label))
+                      ],
+                      onChanged: (v) => setState(() => _level = v ?? _level),
+                    ),
+                    TextFormField(
+                      controller: _availabilityController,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration: darkInputDecoration(
+                          'Availability (optional)',
+                          hint: 'e.g. Weekday evenings, IST'),
+                    ),
+                  ],
+                ),
+                FormSectionCard(
+                  icon: Icons.sell_outlined,
+                  title: 'Topics',
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _topicController,
+                            style: const TextStyle(
+                                color: HomeStyle.textPrimary),
+                            decoration: darkInputDecoration('Add a topic',
+                                hint: 'e.g. System Design'),
+                            onSubmitted: (_) => _addTopic(),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Material(
+                          color: HomeStyle.purple.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(12),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: _addTopic,
+                            child: const Padding(
+                              padding: EdgeInsets.all(13),
+                              child: Icon(Icons.add_circle_outline,
+                                  color: HomeStyle.purple, size: 20),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_topics.isNotEmpty)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final topic in _topics)
+                            _RemovableChip(
+                              label: topic,
+                              onRemove: () =>
+                                  setState(() => _topics.remove(topic)),
+                            ),
+                        ],
+                      ),
+                  ],
+                ),
+                FormSectionCard(
+                  icon: Icons.visibility_outlined,
+                  title: 'Pool visibility',
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text('Visible in the practice pool',
+                              style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: HomeStyle.textPrimary)),
+                        ),
+                        Switch(
+                          value: _isActive,
+                          onChanged: (v) => setState(() => _isActive = v),
+                          activeThumbColor: Colors.white,
+                          activeTrackColor: HomeStyle.purple,
+                          inactiveThumbColor: HomeStyle.textSecondary,
+                          inactiveTrackColor:
+                              Colors.white.withValues(alpha: 0.10),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: isSaving ? null : _submit,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        gradient: HomeStyle.brandGradient,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : const Text('Save',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700)),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _RemovableChip extends StatelessWidget {
+  const _RemovableChip({required this.label, required this.onRemove});
+
+  final String label;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.only(left: 12, right: 6, top: 6, bottom: 6),
+      decoration: BoxDecoration(
+        color: HomeStyle.purple.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: HomeStyle.purple.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: HomeStyle.purple)),
+          const SizedBox(width: 2),
+          InkWell(
+            borderRadius: BorderRadius.circular(100),
+            onTap: onRemove,
+            child: const Padding(
+              padding: EdgeInsets.all(4),
+              child: Icon(Icons.close_rounded, size: 14, color: HomeStyle.purple),
+            ),
+          ),
+        ],
       ),
     );
   }

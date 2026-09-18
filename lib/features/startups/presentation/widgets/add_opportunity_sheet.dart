@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/extensions/context_extensions.dart';
+import '../../../../core/widgets/form_section_card.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../providers/startup_providers.dart';
 
 class AddOpportunitySheet extends ConsumerStatefulWidget {
@@ -56,34 +57,69 @@ class _AddOpportunitySheetState extends ConsumerState<AddOpportunitySheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Add an open role',
-              style: context.textStyles.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700)),
+          const Text('Add an open role',
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: HomeStyle.textPrimary)),
           const SizedBox(height: 16),
           TextField(
               controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Title')),
+              style: const TextStyle(color: HomeStyle.textPrimary),
+              decoration: darkInputDecoration('Title')),
           const SizedBox(height: 12),
           TextField(
               controller: _roleController,
-              decoration: const InputDecoration(
-                  labelText: 'Role (e.g. Co-founder, Designer)')),
+              style: const TextStyle(color: HomeStyle.textPrimary),
+              decoration:
+                  darkInputDecoration('Role (e.g. Co-founder, Designer)')),
           const SizedBox(height: 12),
           TextField(
               controller: _descriptionController,
               maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Description')),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Remote'),
-            value: _isRemote,
-            onChanged: (v) => setState(() => _isRemote = v),
+              style: const TextStyle(color: HomeStyle.textPrimary),
+              decoration: darkInputDecoration('Description')),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const Expanded(
+                child: Text('Remote',
+                    style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        color: HomeStyle.textPrimary)),
+              ),
+              Switch(
+                value: _isRemote,
+                onChanged: (v) => setState(() => _isRemote = v),
+                activeThumbColor: Colors.white,
+                activeTrackColor: HomeStyle.purple,
+                inactiveThumbColor: HomeStyle.textSecondary,
+                inactiveTrackColor: Colors.white.withValues(alpha: 0.10),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
-          SizedBox(
-              width: double.infinity,
-              child:
-                  FilledButton(onPressed: _submit, child: const Text('Add'))),
+          Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: _submit,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  gradient: HomeStyle.brandGradient,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Text('Add',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w700)),
+              ),
+            ),
+          ),
         ],
       ),
     );

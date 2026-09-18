@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../core/widgets/form_section_card.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../../../profile/presentation/providers/profile_providers.dart';
 import '../providers/referral_providers.dart';
 
@@ -60,55 +62,85 @@ class _CreateReferralOfferScreenState
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Offer a Referral')),
+      backgroundColor: HomeStyle.background,
+      appBar: AppBar(
+        backgroundColor: HomeStyle.background,
+        title: const Text('Offer a Referral',
+            style: TextStyle(color: HomeStyle.textPrimary)),
+        iconTheme: const IconThemeData(color: HomeStyle.textPrimary),
+      ),
       body: ResponsiveCenter(
         maxWidth: 560,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Let other members request a referral from you at your company.',
-                  style: context.textStyles.bodyMedium
-                      ?.copyWith(color: context.colors.onSurfaceVariant),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _companyController,
-                  decoration: const InputDecoration(labelText: 'Company'),
-                  validator: (v) => Validators.required(v, fieldName: 'Company'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _roleController,
-                  decoration: const InputDecoration(
-                      labelText: 'Roles you can refer for (optional)'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _notesController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes for requesters (optional)',
-                    hintText: 'e.g. Only for SDE roles, 2+ years experience',
-                    alignLabelWithHint: true,
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    'Let other members request a referral from you at your company.',
+                    style: TextStyle(
+                        fontSize: 13, color: HomeStyle.textSecondary),
                   ),
                 ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: isSaving ? null : _submit,
-                    child: isSaving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
-                        : const Text('Post offer'),
+                const SizedBox(height: 14),
+                FormSectionCard(
+                  icon: Icons.badge_outlined,
+                  title: 'Referral details',
+                  children: [
+                    TextFormField(
+                      controller: _companyController,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration: darkInputDecoration('Company'),
+                      validator: (v) =>
+                          Validators.required(v, fieldName: 'Company'),
+                    ),
+                    TextFormField(
+                      controller: _roleController,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration: darkInputDecoration(
+                          'Roles you can refer for (optional)'),
+                    ),
+                    TextFormField(
+                      controller: _notesController,
+                      maxLines: 3,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration: darkInputDecoration(
+                          'Notes for requesters (optional)',
+                          hint:
+                              'e.g. Only for SDE roles, 2+ years experience'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: isSaving ? null : _submit,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        gradient: HomeStyle.brandGradient,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : const Text('Post offer',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700)),
+                    ),
                   ),
                 ),
               ],

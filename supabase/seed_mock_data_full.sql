@@ -672,12 +672,18 @@ declare
 begin
   for rec in select idx, profile_id, full_name from tmp_mock_profiles order by idx loop
     if not exists (select 1 from events where host_id = rec.profile_id and title = 'Mock Event #' || rec.idx) then
-      insert into events (host_id, title, description, event_type, mode, location, starts_at, ends_at)
+      -- cover_image_url: a distinct, deterministic picsum.photos photo per
+      -- event (seeded by idx, so re-running this block always assigns the
+      -- same image to the same event) — otherwise EventCard/EventDetailView
+      -- fall back to the plain brand-gradient placeholder for all 50 rows,
+      -- which makes the Events list look identical/empty at a glance.
+      insert into events (host_id, title, description, event_type, mode, location, starts_at, ends_at, cover_image_url)
       values (
         rec.profile_id, 'Mock Event #' || rec.idx, 'Seeded event for testing.',
         types[1 + (rec.idx % array_length(types, 1))]::event_type,
         modes[1 + (rec.idx % array_length(modes, 1))]::hackathon_mode,
-        'Remote', now() + (rec.idx || ' days')::interval, now() + (rec.idx || ' days')::interval + interval '2 hours'
+        'Remote', now() + (rec.idx || ' days')::interval, now() + (rec.idx || ' days')::interval + interval '2 hours',
+        'https://picsum.photos/seed/mock-event-' || rec.idx || '/800/450'
       )
       returning id into v_event_id;
 

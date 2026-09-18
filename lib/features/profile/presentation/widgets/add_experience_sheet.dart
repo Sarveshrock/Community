@@ -47,7 +47,9 @@ class _AddExperienceSheetState extends ConsumerState<AddExperienceSheet> {
 
   Future<void> _submit() async {
     if (_companyController.text.trim().isEmpty ||
-        _roleController.text.trim().isEmpty) return;
+        _roleController.text.trim().isEmpty) {
+      return;
+    }
     final experience = Experience(
       id: '',
       companyName: _companyController.text.trim(),

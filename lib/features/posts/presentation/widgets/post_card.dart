@@ -12,6 +12,7 @@ import '../../../../core/widgets/confirm_dialog.dart';
 import '../../../../core/widgets/user_avatar.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../connections/presentation/providers/connection_providers.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../../../moderation/presentation/widgets/report_action_button.dart';
 import '../providers/post_providers.dart';
 import 'post_comments_sheet.dart';
@@ -115,16 +116,19 @@ class _PostCardState extends ConsumerState<PostCard> {
                     Text(
                       getDisplayName(ref,
                           profileId: post.authorId, mainName: post.authorName),
-                      style: context.textStyles.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: HomeStyle.textPrimary,
+                      ),
                     ),
                     Text(
                       [
                         timeago.format(post.createdAt, locale: 'en_short'),
                         if (post.category != null) post.category!,
                       ].join(' · '),
-                      style: context.textStyles.bodySmall
-                          ?.copyWith(color: context.colors.onSurfaceVariant),
+                      style: const TextStyle(
+                          fontSize: 12, color: HomeStyle.textSecondary),
                     ),
                   ],
                 ),
@@ -145,7 +149,11 @@ class _PostCardState extends ConsumerState<PostCard> {
           ),
           if (post.content != null && post.content!.isNotEmpty) ...[
             const SizedBox(height: 10),
-            Text(post.content!),
+            Text(post.content!,
+                style: const TextStyle(
+                    fontSize: 13.5,
+                    height: 1.4,
+                    color: HomeStyle.textPrimary)),
           ],
           if (post.media.isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -165,33 +173,68 @@ class _PostCardState extends ConsumerState<PostCard> {
               runSpacing: 6,
               children: [
                 for (final m in post.mentions)
-                  ActionChip(
-                    avatar: const Icon(Icons.alternate_email, size: 14),
-                    label: Text(getDisplayName(ref,
-                        profileId: m.profileId, mainName: m.fullName)),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () =>
-                        context.push(RoutePaths.personDetailOf(m.profileId)),
+                  Material(
+                    color: HomeStyle.purple.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(100),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(100),
+                      onTap: () => context
+                          .push(RoutePaths.personDetailOf(m.profileId)),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.alternate_email,
+                                size: 13, color: HomeStyle.purple),
+                            const SizedBox(width: 4),
+                            Text(
+                              getDisplayName(ref,
+                                  profileId: m.profileId,
+                                  mainName: m.fullName),
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: HomeStyle.textPrimary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
               ],
             ),
           ],
           const SizedBox(height: 8),
-          const Divider(height: 1),
+          Container(height: 1, color: Colors.white.withValues(alpha: 0.06)),
+          const SizedBox(height: 4),
           Row(
             children: [
               TextButton.icon(
+                style: TextButton.styleFrom(
+                    foregroundColor: HomeStyle.textSecondary),
                 icon: Icon(
                   isLiked ? Icons.favorite : Icons.favorite_border,
                   size: 18,
-                  color: isLiked ? Colors.red : context.colors.onSurfaceVariant,
+                  color: isLiked ? HomeStyle.pink : HomeStyle.textSecondary,
                 ),
-                label: Text('$_likeCount'),
+                label: Text('$_likeCount',
+                    style: TextStyle(
+                        color:
+                            isLiked ? HomeStyle.pink : HomeStyle.textSecondary,
+                        fontWeight: FontWeight.w600)),
                 onPressed: myId == null || _liking ? null : () => _toggleLike(isLiked),
               ),
               TextButton.icon(
-                icon: Icon(Icons.mode_comment_outlined, size: 18, color: context.colors.onSurfaceVariant),
-                label: Text('${post.commentCount}'),
+                style: TextButton.styleFrom(
+                    foregroundColor: HomeStyle.textSecondary),
+                icon: const Icon(Icons.mode_comment_outlined,
+                    size: 18, color: HomeStyle.textSecondary),
+                label: Text('${post.commentCount}',
+                    style: const TextStyle(
+                        color: HomeStyle.textSecondary,
+                        fontWeight: FontWeight.w600)),
                 onPressed: () => showPostCommentsSheet(context, post.id),
               ),
             ],
@@ -200,13 +243,21 @@ class _PostCardState extends ConsumerState<PostCard> {
       ),
     );
 
-    return Card(
+    return Material(
+      color: HomeStyle.cardBase,
       clipBehavior: Clip.antiAlias,
-      child: widget.openOnTap
-          ? InkWell(
-              onTap: () => context.push(RoutePaths.postDetailOf(post.id)),
-              child: content)
-          : content,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+        child: widget.openOnTap
+            ? InkWell(
+                onTap: () => context.push(RoutePaths.postDetailOf(post.id)),
+                child: content)
+            : content,
+      ),
     );
   }
 }
@@ -274,8 +325,8 @@ class _PostMediaCarouselState extends State<_PostMediaCarousel> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: i == _page
-                          ? context.colors.primary
-                          : context.colors.outlineVariant,
+                          ? HomeStyle.purple
+                          : Colors.white.withValues(alpha: 0.2),
                     ),
                   ),
               ],
@@ -372,12 +423,13 @@ class _LinkCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          border: Border.all(color: context.colors.outlineVariant),
+          color: HomeStyle.cardBase,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            Icon(Icons.link, color: context.colors.primary),
+            const Icon(Icons.link, color: HomeStyle.blue),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -385,7 +437,9 @@ class _LinkCard extends StatelessWidget {
                 children: [
                   Text(
                     link.domain ?? link.url,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: HomeStyle.textPrimary),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -393,13 +447,14 @@ class _LinkCard extends StatelessWidget {
                     link.url,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: context.textStyles.bodySmall
-                        ?.copyWith(color: context.colors.onSurfaceVariant),
+                    style: const TextStyle(
+                        fontSize: 12, color: HomeStyle.textSecondary),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.open_in_new, size: 16),
+            const Icon(Icons.open_in_new,
+                size: 16, color: HomeStyle.textSecondary),
           ],
         ),
       ),

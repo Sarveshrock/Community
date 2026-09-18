@@ -133,6 +133,16 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Push notifications (see README "Push notifications" section): lets
+	     iOS wake the app to hand off a background/silent push. The other
+	     half — the Push Notifications capability itself and the
+	     Runner.entitlements file it generates (aps-environment) — has to be
+	     added in Xcode's Signing & Capabilities tab, not by hand here;
+	     that's the step this repo can't do for you on Windows. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/network/supabase_config.dart';
 import 'core/routing/app_router.dart';
+import 'core/services/push_notification_service.dart';
 import 'core/theme/app_theme.dart';
 
 Future<void> main() async {
@@ -22,6 +23,7 @@ Future<void> main() async {
       debugPrint('FlutterError: ${details.exceptionAsString()}');
     };
     await SupabaseConfig.initialize();
+    await PushNotificationService.initialize();
     runApp(const ProviderScope(child: CommuneoApp()));
   }, (error, stack) {
     debugPrint('Uncaught zone error: $error\n$stack');

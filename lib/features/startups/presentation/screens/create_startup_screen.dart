@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../core/widgets/form_section_card.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../providers/startup_providers.dart';
 
 const _stages = ['idea', 'mvp', 'early_revenue', 'growth', 'funded'];
@@ -62,59 +64,90 @@ class _CreateStartupScreenState extends ConsumerState<CreateStartupScreen> {
     final isSaving = ref.watch(startupControllerProvider).isLoading;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('New Startup')),
+      backgroundColor: HomeStyle.background,
+      appBar: AppBar(
+        backgroundColor: HomeStyle.background,
+        title: const Text('New Startup',
+            style: TextStyle(color: HomeStyle.textPrimary)),
+        iconTheme: const IconThemeData(color: HomeStyle.textPrimary),
+      ),
       body: ResponsiveCenter(
         maxWidth: 560,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Startup name'),
-                  validator: (v) => Validators.required(v, fieldName: 'Name'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                    controller: _descriptionController,
-                    maxLines: 3,
-                    decoration:
-                        const InputDecoration(labelText: 'Description')),
-                const SizedBox(height: 12),
-                TextFormField(
-                    controller: _industryController,
-                    decoration: const InputDecoration(labelText: 'Industry')),
-                const SizedBox(height: 12),
-                TextFormField(
-                    controller: _websiteController,
-                    decoration: const InputDecoration(labelText: 'Website'),
-                    validator: Validators.url),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: _stage,
-                  decoration: const InputDecoration(labelText: 'Stage'),
-                  items: [
-                    for (final s in _stages)
-                      DropdownMenuItem(
-                          value: s, child: Text(s.replaceAll('_', ' ')))
+                FormSectionCard(
+                  icon: Icons.rocket_launch_outlined,
+                  title: 'Startup basics',
+                  children: [
+                    TextFormField(
+                      controller: _nameController,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration: darkInputDecoration('Startup name'),
+                      validator: (v) => Validators.required(v, fieldName: 'Name'),
+                    ),
+                    TextFormField(
+                      controller: _descriptionController,
+                      maxLines: 3,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration: darkInputDecoration('Description'),
+                    ),
+                    TextFormField(
+                      controller: _industryController,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration: darkInputDecoration('Industry'),
+                    ),
+                    TextFormField(
+                      controller: _websiteController,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration: darkInputDecoration('Website'),
+                      validator: Validators.url,
+                    ),
+                    DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      initialValue: _stage,
+                      dropdownColor: HomeStyle.cardBase,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration: darkInputDecoration('Stage'),
+                      items: [
+                        for (final s in _stages)
+                          DropdownMenuItem(
+                              value: s, child: Text(s.replaceAll('_', ' ')))
+                      ],
+                      onChanged: (v) => setState(() => _stage = v ?? _stage),
+                    ),
                   ],
-                  onChanged: (v) => setState(() => _stage = v ?? _stage),
                 ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: isSaving ? null : _submit,
-                    child: isSaving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
-                        : const Text('Create startup'),
+                const SizedBox(height: 8),
+                Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: isSaving ? null : _submit,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        gradient: HomeStyle.brandGradient,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : const Text('Create startup',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700)),
+                    ),
                   ),
                 ),
               ],

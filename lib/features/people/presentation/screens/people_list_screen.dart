@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/loading_state.dart';
+import '../../../home/presentation/widgets/home_style.dart' show GlowBackdrop;
 import '../../../profile/presentation/providers/profile_providers.dart';
 import '../providers/people_providers.dart';
 import '../widgets/people_style.dart';
@@ -46,6 +46,10 @@ class _PeopleListScreenState extends ConsumerState<PeopleListScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: PeopleStyle.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) => const _PeopleFiltersSheet(),
     );
   }
@@ -54,23 +58,28 @@ class _PeopleListScreenState extends ConsumerState<PeopleListScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: PeopleStyle.background,
-      body: SafeArea(
-        child: ResponsiveCenter(
-          child: Column(
-            children: [
-              _Header(onFilterTap: _openFilters),
-              const _CategoryChips(),
-              const SizedBox(height: 4),
-              _ModeTabs(controller: _tabController),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: const [_AllPeopleTab(), _RecommendedPeopleTab()],
-                ),
+      body: Stack(
+        children: [
+          const Positioned.fill(child: GlowBackdrop()),
+          SafeArea(
+            child: ResponsiveCenter(
+              child: Column(
+                children: [
+                  _Header(onFilterTap: _openFilters),
+                  const _CategoryChips(),
+                  const SizedBox(height: 4),
+                  _ModeTabs(controller: _tabController),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: const [_AllPeopleTab(), _RecommendedPeopleTab()],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -414,25 +423,30 @@ class _PeopleFiltersSheetState extends ConsumerState<_PeopleFiltersSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Filters',
-              style: context.textStyles.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700)),
+          const Text('Filters',
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: PeopleStyle.textPrimary)),
           const SizedBox(height: 16),
-          TextField(
+          _FilterField(
             controller: _queryController,
-            decoration:
-                const InputDecoration(labelText: 'Name, role, or company'),
+            hint: 'Name, role, or company',
           ),
           const SizedBox(height: 12),
-          TextField(
-            controller: _cityController,
-            decoration: const InputDecoration(labelText: 'City'),
-          ),
+          _FilterField(controller: _cityController, hint: 'City'),
           const SizedBox(height: 20),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: PeopleStyle.textPrimary,
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
                   onPressed: () {
                     ref.read(peopleFiltersProvider.notifier).state =
                         const PeopleFilters();
@@ -443,25 +457,69 @@ class _PeopleFiltersSheetState extends ConsumerState<_PeopleFiltersSheet> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: FilledButton(
-                  onPressed: () {
-                    ref.read(peopleFiltersProvider.notifier).state =
-                        PeopleFilters(
-                      query: _queryController.text.trim().isEmpty
-                          ? null
-                          : _queryController.text.trim(),
-                      city: _cityController.text.trim().isEmpty
-                          ? null
-                          : _cityController.text.trim(),
-                    );
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Apply'),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () {
+                      ref.read(peopleFiltersProvider.notifier).state =
+                          PeopleFilters(
+                        query: _queryController.text.trim().isEmpty
+                            ? null
+                            : _queryController.text.trim(),
+                        city: _cityController.text.trim().isEmpty
+                            ? null
+                            : _cityController.text.trim(),
+                      );
+                      Navigator.of(context).pop();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        gradient: PeopleStyle.selectedChipGradient,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Text('Apply',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FilterField extends StatelessWidget {
+  const _FilterField({required this.controller, required this.hint});
+
+  final TextEditingController controller;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: PeopleStyle.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(color: PeopleStyle.textPrimary, fontSize: 14.5),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(color: PeopleStyle.textMuted),
+          border: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
       ),
     );
   }

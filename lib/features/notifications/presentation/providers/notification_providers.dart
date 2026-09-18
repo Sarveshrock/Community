@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/supabase_config.dart';
+import '../../../../core/services/push_notification_service.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../data/repositories/notification_repository_impl.dart';
 import '../../domain/entities/app_notification.dart';
@@ -69,3 +70,24 @@ class NotificationController extends AsyncNotifier<void> {
 final notificationControllerProvider =
     AsyncNotifierProvider<NotificationController, void>(
         NotificationController.new);
+
+/// Requests the OS notification permission and registers this device's FCM
+/// token against the signed-in user's profile — mirrors `appIconSyncProvider`
+/// (`app_icon_providers.dart`)'s one-time, side-effect-only watch pattern,
+/// watched once from [HomeScreen]. A no-op on a build with no Firebase
+/// project configured (`PushNotificationService.isAvailable` false) or
+/// while signed out.
+final pushNotificationSyncProvider = FutureProvider<void>((ref) async {
+  final user = ref.watch(authStateProvider).valueOrNull;
+  if (user == null || !PushNotificationService.isAvailable) return;
+
+  final token = await PushNotificationService.requestPermissionAndGetToken();
+  if (token == null) return;
+
+  final notifier = ref.read(notificationControllerProvider.notifier);
+  await notifier.registerDeviceToken(token, PushNotificationService.platformLabel);
+  PushNotificationService.setTokenRefreshHandler(
+    (refreshed) => notifier.registerDeviceToken(
+        refreshed, PushNotificationService.platformLabel),
+  );
+});

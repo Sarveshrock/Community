@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/responsive.dart';
@@ -11,6 +10,7 @@ import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/loading_state.dart';
 import '../../../../core/widgets/user_avatar.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../../domain/entities/local_entities.dart';
 import '../providers/local_providers.dart';
 
@@ -38,22 +38,107 @@ class _LocalConnectionsScreenState extends ConsumerState<LocalConnectionsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Local Connections'),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppColors.localAccent,
-          labelColor: AppColors.localAccent,
-          tabs: const [Tab(text: 'Requests'), Tab(text: 'Connected')],
-        ),
+      backgroundColor: HomeStyle.background,
+      body: Stack(
+        children: [
+          const Positioned.fill(child: GlowBackdrop()),
+          SafeArea(
+            child: ResponsiveCenter(
+              child: Column(
+                children: [
+                  const _Header(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TabBar(
+                      controller: _tabController,
+                      dividerColor: Colors.transparent,
+                      indicatorSize: TabBarIndicatorSize.label,
+                      indicatorColor: AppColors.localAccent,
+                      indicatorWeight: 3,
+                      labelColor: AppColors.localAccent,
+                      unselectedLabelColor: HomeStyle.textSecondary,
+                      labelStyle: const TextStyle(
+                          fontSize: 13.5, fontWeight: FontWeight.w700),
+                      unselectedLabelStyle: const TextStyle(
+                          fontSize: 13.5, fontWeight: FontWeight.w500),
+                      tabs: const [Tab(text: 'Requests'), Tab(text: 'Connected')],
+                    ),
+                  ),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: const [
+                        _LocalRequestsTab(),
+                        _LocalConnectedTab(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
-      body: ResponsiveCenter(
-        child: TabBarView(
-          controller: _tabController,
-          children: const [
-            _LocalRequestsTab(),
-            _LocalConnectedTab(),
-          ],
+    );
+  }
+}
+
+class _Header extends StatelessWidget {
+  const _Header();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Row(
+        children: [
+          _IconButton(
+              icon: Icons.arrow_back_rounded,
+              tooltip: 'Back',
+              onTap: () => context.pop()),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text('My Local Connections',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: HomeStyle.textPrimary)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IconButton extends StatelessWidget {
+  const _IconButton({required this.icon, required this.tooltip, required this.onTap});
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: tooltip,
+      child: Tooltip(
+        message: tooltip,
+        child: Material(
+          color: HomeStyle.cardBase,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(13),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(13),
+            onTap: onTap,
+            child: SizedBox(
+              width: 44,
+              height: 44,
+              child: Icon(icon, size: 21, color: HomeStyle.textPrimary),
+            ),
+          ),
         ),
       ),
     );
@@ -85,25 +170,33 @@ class _LocalRequestsTab extends ConsumerWidget {
         final outgoing = requests.where((c) => c.receiverId != myId).toList();
 
         return ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
           children: [
             if (incoming.isNotEmpty) ...[
-              Text('Incoming',
-                  style: context.textStyles.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 8),
-              for (final c in incoming)
+              const Text('Incoming',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: HomeStyle.textPrimary)),
+              const SizedBox(height: 10),
+              for (final c in incoming) ...[
                 _LocalConnectionTile(connection: c, myId: myId, incoming: true),
-              const SizedBox(height: 20),
+                const SizedBox(height: 10),
+              ],
+              const SizedBox(height: 12),
             ],
             if (outgoing.isNotEmpty) ...[
-              Text('Sent',
-                  style: context.textStyles.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 8),
-              for (final c in outgoing)
+              const Text('Sent',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: HomeStyle.textPrimary)),
+              const SizedBox(height: 10),
+              for (final c in outgoing) ...[
                 _LocalConnectionTile(
                     connection: c, myId: myId, incoming: false),
+                const SizedBox(height: 10),
+              ],
             ],
           ],
         );
@@ -132,9 +225,9 @@ class _LocalConnectedTab extends ConsumerWidget {
               icon: Icons.groups_outlined, title: 'No local connections yet');
         }
         return ListView.separated(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
           itemCount: connections.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
           itemBuilder: (context, i) => _LocalConnectionTile(
               connection: connections[i], myId: myId, incoming: false),
         );
@@ -156,38 +249,70 @@ class _LocalConnectionTile extends ConsumerWidget {
     final isLoading = ref.watch(localControllerProvider).isLoading;
     final otherId = connection.otherProfileId(myId);
 
-    return Card(
-      child: ListTile(
+    return Material(
+      color: HomeStyle.cardBase,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
         onTap: () => context.push(RoutePaths.localProfileDetailOf(otherId)),
-        leading: UserAvatar(
-            avatarUrl: connection.otherAvatarUrl,
-            name: connection.otherName ?? '?'),
-        title: Text(connection.otherName ?? 'Someone nearby',
-            style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(connection.status.name),
-        trailing: connection.status == LocalConnectionStatus.pending && incoming
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.check_circle, color: Colors.green),
-                    onPressed: isLoading
-                        ? null
-                        : () => ref
-                            .read(localControllerProvider.notifier)
-                            .respondToRequest(connection.id, accept: true),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.cancel, color: context.colors.error),
-                    onPressed: isLoading
-                        ? null
-                        : () => ref
-                            .read(localControllerProvider.notifier)
-                            .respondToRequest(connection.id, accept: false),
-                  ),
-                ],
-              )
-            : const Icon(Icons.chevron_right),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              UserAvatar(
+                  avatarUrl: connection.otherAvatarUrl,
+                  name: connection.otherName ?? '?'),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(connection.otherName ?? 'Someone nearby',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: HomeStyle.textPrimary)),
+                    const SizedBox(height: 2),
+                    Text(connection.status.name,
+                        style: const TextStyle(
+                            fontSize: 12.5, color: HomeStyle.textSecondary)),
+                  ],
+                ),
+              ),
+              connection.status == LocalConnectionStatus.pending && incoming
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.check_circle,
+                              color: HomeStyle.green),
+                          onPressed: isLoading
+                              ? null
+                              : () => ref
+                                  .read(localControllerProvider.notifier)
+                                  .respondToRequest(connection.id, accept: true),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.cancel, color: HomeStyle.pink),
+                          onPressed: isLoading
+                              ? null
+                              : () => ref
+                                  .read(localControllerProvider.notifier)
+                                  .respondToRequest(connection.id, accept: false),
+                        ),
+                      ],
+                    )
+                  : const Icon(Icons.chevron_right_rounded,
+                      color: HomeStyle.textSecondary),
+            ],
+          ),
+        ),
       ),
     );
   }

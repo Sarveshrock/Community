@@ -3,6 +3,11 @@
          intentionally not requesting ACCESS_FINE_LOCATION, so Android's own
          permission dialog offers "approximate location" rather than exact. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- Required on Android 13+ to show notifications at all — requested at
+         runtime via FirebaseMessaging.requestPermission() (see
+         PushNotificationService), this declaration just makes that request
+         legal. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="community_app"
         android:name="${applicationName}"
@@ -29,6 +34,13 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- image_cropper (profile photo upload, see EditProfileScreen):
+             the crop UI itself is this native uCrop activity — required by
+             the plugin regardless of which screen invokes it. -->
+        <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
         <!-- Customizable App Icon (Settings > Appearance > App Icon): each
              style below is a real, separate launcher entry point aliased
              back to MainActivity — Android has no API to swap one launcher
@@ -121,6 +133,16 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity-alias>
+        <!-- Default channel/icon FCM falls back to for a background/
+             terminated-app notification it posts itself, before
+             PushNotificationService has ever run in this install to create
+             the same channel via flutter_local_notifications. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="communeo_default" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

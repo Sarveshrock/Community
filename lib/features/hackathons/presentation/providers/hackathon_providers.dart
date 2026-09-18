@@ -154,17 +154,22 @@ class HackathonController extends AsyncNotifier<void> {
           ),
     );
     state = result;
-    if (!result.hasError) _invalidateTeam(hackathonId, teamRequirementId: teamRequirementId);
+    if (!result.hasError)
+      _invalidateTeam(hackathonId, teamRequirementId: teamRequirementId);
     return !result.hasError;
   }
 
-  Future<bool> removeMember(String teamRequirementId, String profileId, String hackathonId) async {
+  Future<bool> removeMember(
+      String teamRequirementId, String profileId, String hackathonId) async {
     state = const AsyncLoading();
     final result = await AsyncValue.guard(
-      () => ref.read(hackathonRepositoryProvider).removeMember(teamRequirementId, profileId),
+      () => ref
+          .read(hackathonRepositoryProvider)
+          .removeMember(teamRequirementId, profileId),
     );
     state = result;
-    if (!result.hasError) _invalidateTeam(hackathonId, teamRequirementId: teamRequirementId);
+    if (!result.hasError)
+      _invalidateTeam(hackathonId, teamRequirementId: teamRequirementId);
     return !result.hasError;
   }
 
@@ -248,8 +253,9 @@ class HackathonController extends AsyncNotifier<void> {
     final result = await AsyncValue.guard(() =>
         ref.read(hackathonRepositoryProvider).leaveTeam(teamRequirementId));
     state = result;
-    if (!result.hasError)
+    if (!result.hasError) {
       _invalidateTeam(hackathonId, teamRequirementId: teamRequirementId);
+    }
     return !result.hasError;
   }
 
@@ -258,8 +264,9 @@ class HackathonController extends AsyncNotifier<void> {
     final result = await AsyncValue.guard(() =>
         ref.read(hackathonRepositoryProvider).deleteTeam(teamRequirementId));
     state = result;
-    if (!result.hasError)
+    if (!result.hasError) {
       _invalidateTeam(hackathonId, teamRequirementId: teamRequirementId);
+    }
     return !result.hasError;
   }
 }

@@ -21,6 +21,11 @@ plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
     id("com.android.application") version "9.1.0" apply false
     id("org.jetbrains.kotlin.android") version "2.4.0" apply false
+    // Push notifications (see README): applied conditionally in
+    // app/build.gradle.kts, only once android/app/google-services.json
+    // actually exists, so a checkout with no Firebase project configured
+    // yet still builds.
+    id("com.google.gms.google-services") version "4.4.4" apply false
 }
 
 include(":app")

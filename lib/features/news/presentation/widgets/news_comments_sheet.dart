@@ -7,6 +7,7 @@ import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/user_avatar.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../connections/presentation/providers/connection_providers.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../providers/news_providers.dart';
 
 /// Opinions (and replies to opinions) on one news article, in a draggable
@@ -19,6 +20,7 @@ Future<void> showNewsCommentsSheet(BuildContext context, String articleUrl) {
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
+    backgroundColor: HomeStyle.background,
     builder: (_) => NewsCommentsSheet(articleUrl: articleUrl),
   );
 }
@@ -119,13 +121,20 @@ class _NewsCommentsSheetState extends ConsumerState<NewsCommentsSheet> {
       builder: (context, scrollController) => Column(
         children: [
           const SizedBox(height: 12),
-          Text('Opinions', style: context.textStyles.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          const Text('Opinions',
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: HomeStyle.textPrimary)),
           const SizedBox(height: 8),
-          const Divider(height: 1),
+          Container(height: 1, color: Colors.white.withValues(alpha: 0.08)),
           Expanded(
             child: commentsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text(e.toString())),
+              loading: () => const Center(
+                  child: CircularProgressIndicator(color: HomeStyle.purple)),
+              error: (e, _) => Center(
+                  child: Text(e.toString(),
+                      style: const TextStyle(color: HomeStyle.textSecondary))),
               data: (comments) {
                 if (comments.isEmpty) {
                   return const EmptyState(
@@ -189,12 +198,15 @@ class _NewsCommentsSheetState extends ConsumerState<NewsCommentsSheet> {
                           Expanded(
                             child: Text(
                               'Replying to ${_replyingTo!.name}',
-                              style: context.textStyles.bodySmall
-                                  ?.copyWith(color: context.colors.primary, fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: HomeStyle.purple,
+                                  fontWeight: FontWeight.w600),
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.close, size: 16),
+                            icon: const Icon(Icons.close,
+                                size: 16, color: HomeStyle.textSecondary),
                             visualDensity: VisualDensity.compact,
                             onPressed: _cancelReply,
                           ),
@@ -204,25 +216,61 @@ class _NewsCommentsSheetState extends ConsumerState<NewsCommentsSheet> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextField(
-                          controller: _controller,
-                          focusNode: _focusNode,
-                          minLines: 1,
-                          maxLines: 4,
-                          textCapitalization: TextCapitalization.sentences,
-                          decoration: InputDecoration(
-                            hintText: _replyingTo != null
-                                ? 'Write a reply...'
-                                : 'Share your opinion...',
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: HomeStyle.cardBase,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.08)),
                           ),
-                          onSubmitted: (_) => _send(),
+                          child: TextField(
+                            controller: _controller,
+                            focusNode: _focusNode,
+                            minLines: 1,
+                            maxLines: 4,
+                            textCapitalization: TextCapitalization.sentences,
+                            style: const TextStyle(
+                                color: HomeStyle.textPrimary, fontSize: 14),
+                            decoration: InputDecoration(
+                              hintText: _replyingTo != null
+                                  ? 'Write a reply...'
+                                  : 'Share your opinion...',
+                              hintStyle:
+                                  const TextStyle(color: HomeStyle.textSecondary),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                            ),
+                            onSubmitted: (_) => _send(),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       _sending
                           ? const SizedBox(
-                              width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                          : IconButton.filled(icon: const Icon(Icons.send_rounded), onPressed: _send),
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: HomeStyle.purple))
+                          : Semantics(
+                              button: true,
+                              label: 'Send',
+                              child: InkResponse(
+                                onTap: _send,
+                                radius: 24,
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: HomeStyle.brandGradient,
+                                  ),
+                                  child: const Icon(Icons.send_rounded,
+                                      size: 18, color: Colors.white),
+                                ),
+                              ),
+                            ),
                     ],
                   ),
                 ],
@@ -264,17 +312,21 @@ class _CommentTile extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       getDisplayName(ref, profileId: comment.authorId, mainName: comment.authorName),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          color: HomeStyle.textPrimary),
                     ),
                   ),
                   Text(
                     timeago.format(comment.createdAt, locale: 'en_short'),
-                    style: context.textStyles.bodySmall
-                        ?.copyWith(color: context.colors.onSurfaceVariant),
+                    style: const TextStyle(
+                        fontSize: 11, color: HomeStyle.textSecondary),
                   ),
                   if (isOwn)
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 18),
+                      icon: const Icon(Icons.delete_outline,
+                          size: 18, color: HomeStyle.pink),
                       visualDensity: VisualDensity.compact,
                       onPressed: onDelete,
                     ),
@@ -285,20 +337,26 @@ class _CommentTile extends ConsumerWidget {
                   padding: const EdgeInsets.only(bottom: 2),
                   child: Text(
                     'Replying to ${comment.mentionedName}',
-                    style: context.textStyles.bodySmall
-                        ?.copyWith(color: context.colors.primary, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 12,
+                        color: HomeStyle.purple,
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
-              Text(comment.content),
+              Text(comment.content,
+                  style: const TextStyle(
+                      fontSize: 13, color: HomeStyle.textPrimary)),
               const SizedBox(height: 2),
               InkWell(
                 onTap: onReply,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 2),
+                child: const Padding(
+                  padding: EdgeInsets.only(top: 2),
                   child: Text(
                     'Reply',
-                    style: context.textStyles.bodySmall
-                        ?.copyWith(color: context.colors.onSurfaceVariant, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: HomeStyle.textSecondary,
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

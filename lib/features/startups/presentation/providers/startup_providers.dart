@@ -40,8 +40,9 @@ class StartupController extends AsyncNotifier<void> {
     final result = await AsyncValue.guard(() =>
         ref.read(startupRepositoryProvider).createOpportunity(startupId, data));
     state = result;
-    if (!result.hasError)
+    if (!result.hasError) {
       ref.invalidate(startupOpportunitiesProvider(startupId));
+    }
     return !result.hasError;
   }
 }

@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../core/widgets/form_section_card.dart';
+import '../../../../core/widgets/multi_select_chips.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../../../profile/presentation/providers/profile_providers.dart';
 import '../providers/project_providers.dart';
 
@@ -63,91 +66,125 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     final skillsAsync = ref.watch(allSkillsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('New Project')),
+      backgroundColor: HomeStyle.background,
+      appBar: AppBar(
+        backgroundColor: HomeStyle.background,
+        title: const Text('New Project',
+            style: TextStyle(color: HomeStyle.textPrimary)),
+        iconTheme: const IconThemeData(color: HomeStyle.textPrimary),
+      ),
       body: ResponsiveCenter(
         maxWidth: 560,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextFormField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(labelText: 'Project title'),
-                  validator: (v) => Validators.required(v, fieldName: 'Title'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _descriptionController,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                      labelText: 'What are you building?',
-                      alignLabelWithHint: true),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                    controller: _categoryController,
-                    decoration: const InputDecoration(labelText: 'Category')),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<CollaborationType>(
-                  initialValue: _collaborationType,
-                  decoration:
-                      const InputDecoration(labelText: 'Collaboration type'),
-                  items: [
-                    for (final c in CollaborationType.values)
-                      DropdownMenuItem(value: c, child: Text(c.label))
+                FormSectionCard(
+                  icon: Icons.info_outline_rounded,
+                  title: 'Project basics',
+                  children: [
+                    TextFormField(
+                      controller: _titleController,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration: darkInputDecoration('Project title'),
+                      validator: (v) => Validators.required(v, fieldName: 'Title'),
+                    ),
+                    TextFormField(
+                      controller: _descriptionController,
+                      maxLines: 4,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration:
+                          darkInputDecoration('What are you building?'),
+                    ),
+                    TextFormField(
+                      controller: _categoryController,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration: darkInputDecoration('Category'),
+                    ),
+                    DropdownButtonFormField<CollaborationType>(
+                      isExpanded: true,
+                      initialValue: _collaborationType,
+                      dropdownColor: HomeStyle.cardBase,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration: darkInputDecoration('Collaboration type'),
+                      items: [
+                        for (final c in CollaborationType.values)
+                          DropdownMenuItem(value: c, child: Text(c.label))
+                      ],
+                      onChanged: (v) => setState(
+                          () => _collaborationType = v ?? _collaborationType),
+                    ),
+                    DropdownButtonFormField<CompensationType>(
+                      isExpanded: true,
+                      initialValue: _compensationType,
+                      dropdownColor: HomeStyle.cardBase,
+                      style: const TextStyle(color: HomeStyle.textPrimary),
+                      decoration: darkInputDecoration('Compensation'),
+                      items: [
+                        for (final c in CompensationType.values)
+                          DropdownMenuItem(value: c, child: Text(c.label))
+                      ],
+                      onChanged: (v) => setState(
+                          () => _compensationType = v ?? _compensationType),
+                    ),
                   ],
-                  onChanged: (v) => setState(
-                      () => _collaborationType = v ?? _collaborationType),
                 ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<CompensationType>(
-                  initialValue: _compensationType,
-                  decoration: const InputDecoration(labelText: 'Compensation'),
-                  items: [
-                    for (final c in CompensationType.values)
-                      DropdownMenuItem(value: c, child: Text(c.label))
+                FormSectionCard(
+                  icon: Icons.sell_outlined,
+                  title: 'Skills needed',
+                  children: [
+                    skillsAsync.when(
+                      loading: () =>
+                          const LinearProgressIndicator(color: HomeStyle.purple),
+                      error: (_, __) => const Text('Could not load skills',
+                          style: TextStyle(color: HomeStyle.textSecondary)),
+                      data: (skills) => MultiSelectChips(
+                        options: [for (final s in skills) s.name],
+                        selected: {
+                          for (final s in skills)
+                            if (_selectedSkillIds.contains(s.id)) s.name
+                        },
+                        onChanged: (selectedNames) => setState(() {
+                          _selectedSkillIds
+                            ..clear()
+                            ..addAll([
+                              for (final s in skills)
+                                if (selectedNames.contains(s.name)) s.id
+                            ]);
+                        }),
+                      ),
+                    ),
                   ],
-                  onChanged: (v) => setState(
-                      () => _compensationType = v ?? _compensationType),
                 ),
-                const SizedBox(height: 16),
-                Text('Skills needed', style: context.textStyles.titleSmall),
                 const SizedBox(height: 8),
-                skillsAsync.when(
-                  data: (skills) => Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final skill in skills)
-                        FilterChip(
-                          label: Text(skill.name),
-                          selected: _selectedSkillIds.contains(skill.id),
-                          onSelected: (selected) => setState(() {
-                            selected
-                                ? _selectedSkillIds.add(skill.id)
-                                : _selectedSkillIds.remove(skill.id);
-                          }),
-                        ),
-                    ],
-                  ),
-                  loading: () => const LinearProgressIndicator(),
-                  error: (_, __) => const Text('Could not load skills'),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: isSaving ? null : _submit,
-                    child: isSaving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
-                        : const Text('Post project'),
+                Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: isSaving ? null : _submit,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        gradient: HomeStyle.brandGradient,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : const Text('Post project',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700)),
+                    ),
                   ),
                 ),
               ],

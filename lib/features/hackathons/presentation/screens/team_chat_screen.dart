@@ -5,6 +5,7 @@ import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,6 +17,7 @@ import '../../../../core/widgets/loading_state.dart';
 import '../../../../core/widgets/user_avatar.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../connections/presentation/providers/connection_providers.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../../../messaging/domain/entities/message.dart';
 import '../../../messaging/presentation/providers/message_providers.dart';
 import '../providers/hackathon_providers.dart';
@@ -122,25 +124,31 @@ class _TeamChatScreenState extends ConsumerState<TeamChatScreen> {
   Future<void> _openAttachmentSheet(String conversationId) async {
     final choice = await showModalBottomSheet<String>(
       context: context,
+      backgroundColor: HomeStyle.cardBase,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Icons.photo_outlined),
-              title: const Text('Photo from gallery'),
+            const SizedBox(height: 8),
+            _AttachmentOption(
+              icon: Icons.photo_outlined,
+              label: 'Photo from gallery',
               onTap: () => Navigator.pop(context, 'gallery'),
             ),
-            ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Take a photo'),
+            _AttachmentOption(
+              icon: Icons.photo_camera_outlined,
+              label: 'Take a photo',
               onTap: () => Navigator.pop(context, 'camera'),
             ),
-            ListTile(
-              leading: const Icon(Icons.attach_file),
-              title: const Text('Document or other file'),
+            _AttachmentOption(
+              icon: Icons.attach_file,
+              label: 'Document or other file',
               onTap: () => Navigator.pop(context, 'file'),
             ),
+            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -187,8 +195,9 @@ class _TeamChatScreenState extends ConsumerState<TeamChatScreen> {
     required MessageType type,
   }) async {
     if (bytes.length > _maxAttachmentBytes) {
-      if (mounted)
+      if (mounted) {
         context.showSnack('That file is too large (25 MB max)', isError: true);
+      }
       return;
     }
     setState(() => _uploading = true);
@@ -217,135 +226,351 @@ class _TeamChatScreenState extends ConsumerState<TeamChatScreen> {
     };
 
     return Scaffold(
-      appBar: AppBar(
-          title: Text(widget.teamName ??
-              teamAsync.valueOrNull?.teamName ??
-              'Team chat')),
-      body: conversationIdAsync.when(
-        loading: () => const LoadingState(),
-        error: (e, _) => ErrorState(
-          message: e.toString(),
-          onRetry: () => ref
-              .invalidate(teamConversationIdProvider(widget.teamRequirementId)),
-        ),
-        data: (conversationId) {
-          if (conversationId == null) {
-            return const EmptyState(
-              icon: Icons.lock_outline,
-              title: 'No access to this chat',
-              message: 'Only current team members can view this conversation.',
-            );
-          }
-          final messagesAsync =
-              ref.watch(conversationMessagesProvider(conversationId));
-          messagesAsync
-              .whenData((messages) => _handleNewMessages(messages, myId));
-
-          return Column(
-            children: [
-              Expanded(
-                child: messagesAsync.when(
-                  loading: () => const LoadingState(),
-                  error: (e, _) => ErrorState(
-                    message: e.toString(),
-                    onRetry: () => ref.invalidate(
-                        conversationMessagesProvider(conversationId)),
-                  ),
-                  data: (messages) {
-                    if (messages.isEmpty) {
-                      return Center(
-                        child: Text(
-                          'Say hello to your team 👋',
-                          style: context.textStyles.bodyMedium?.copyWith(
-                              color: context.colors.onSurfaceVariant),
-                        ),
-                      );
-                    }
-                    return ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.all(16),
-                      itemCount: messages.length,
-                      itemBuilder: (context, index) {
-                        final message = messages[index];
-                        final isMine = message.senderId == myId;
-                        final showSenderName = !isMine &&
-                            (index == 0 ||
-                                messages[index - 1].senderId !=
-                                    message.senderId);
-                        return _TeamMessageBubble(
-                          message: message,
-                          isMine: isMine,
-                          sender: showSenderName
-                              ? membersById[message.senderId]
-                              : null,
-                        );
-                      },
-                    );
-                  },
+      backgroundColor: HomeStyle.background,
+      body: Stack(
+        children: [
+          const Positioned.fill(child: GlowBackdrop()),
+          SafeArea(
+            child: Column(
+              children: [
+                _Header(
+                  teamName: widget.teamName ??
+                      teamAsync.valueOrNull?.teamName ??
+                      'Team chat',
                 ),
-              ),
-              if (_uploading) const LinearProgressIndicator(minHeight: 2),
-              SafeArea(
-                top: false,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(_showEmojiPicker
-                            ? Icons.keyboard_outlined
-                            : Icons.emoji_emotions_outlined),
-                        onPressed: _toggleEmojiPicker,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.attach_file),
-                        onPressed: _uploading
-                            ? null
-                            : () => _openAttachmentSheet(conversationId),
-                      ),
-                      Expanded(
-                        child: TextField(
-                          controller: _textController,
-                          focusNode: _textFieldFocusNode,
-                          minLines: 1,
-                          maxLines: 4,
-                          textCapitalization: TextCapitalization.sentences,
-                          decoration: const InputDecoration(
-                              hintText: 'Message the team...'),
-                          onTap: () {
-                            if (_showEmojiPicker)
-                              setState(() => _showEmojiPicker = false);
-                          },
-                          onSubmitted: (_) => _send(conversationId),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton.filled(
-                        icon: const Icon(Icons.send_rounded),
-                        onPressed: () => _send(conversationId),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Offstage(
-                offstage: !_showEmojiPicker,
-                child: SizedBox(
-                  height: 280,
-                  child: EmojiPicker(
-                    onEmojiSelected: _onEmojiSelected,
-                    config: const Config(
-                      height: 280,
-                      emojiViewConfig: EmojiViewConfig(emojiSizeMax: 28),
+                Expanded(
+                  child: conversationIdAsync.when(
+                    loading: () => const LoadingState(),
+                    error: (e, _) => ErrorState(
+                      message: e.toString(),
+                      onRetry: () => ref.invalidate(
+                          teamConversationIdProvider(widget.teamRequirementId)),
                     ),
+                    data: (conversationId) {
+                      if (conversationId == null) {
+                        return const EmptyState(
+                          icon: Icons.lock_outline,
+                          title: 'No access to this chat',
+                          message:
+                              'Only current team members can view this conversation.',
+                        );
+                      }
+                      final messagesAsync =
+                          ref.watch(conversationMessagesProvider(conversationId));
+                      messagesAsync.whenData(
+                          (messages) => _handleNewMessages(messages, myId));
+
+                      return Column(
+                        children: [
+                          Expanded(
+                            child: messagesAsync.when(
+                              loading: () => const LoadingState(),
+                              error: (e, _) => ErrorState(
+                                message: e.toString(),
+                                onRetry: () => ref.invalidate(
+                                    conversationMessagesProvider(conversationId)),
+                              ),
+                              data: (messages) {
+                                if (messages.isEmpty) {
+                                  return const Center(
+                                    child: Text(
+                                      'Say hello to your team 👋',
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          color: HomeStyle.textSecondary),
+                                    ),
+                                  );
+                                }
+                                return ListView.builder(
+                                  controller: _scrollController,
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: messages.length,
+                                  itemBuilder: (context, index) {
+                                    final message = messages[index];
+                                    final isMine = message.senderId == myId;
+                                    final showSenderName = !isMine &&
+                                        (index == 0 ||
+                                            messages[index - 1].senderId !=
+                                                message.senderId);
+                                    return _TeamMessageBubble(
+                                      message: message,
+                                      isMine: isMine,
+                                      sender: showSenderName
+                                          ? membersById[message.senderId]
+                                          : null,
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                          if (_uploading)
+                            const LinearProgressIndicator(
+                                minHeight: 2, color: HomeStyle.purple),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                _ComposerIconButton(
+                                  icon: _showEmojiPicker
+                                      ? Icons.keyboard_outlined
+                                      : Icons.emoji_emotions_outlined,
+                                  onTap: _toggleEmojiPicker,
+                                ),
+                                const SizedBox(width: 4),
+                                _ComposerIconButton(
+                                  icon: Icons.attach_file,
+                                  onTap: _uploading
+                                      ? null
+                                      : () => _openAttachmentSheet(conversationId),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Container(
+                                    constraints:
+                                        const BoxConstraints(minHeight: 44),
+                                    decoration: BoxDecoration(
+                                      color: HomeStyle.cardBase,
+                                      borderRadius: BorderRadius.circular(22),
+                                      border: Border.all(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.08)),
+                                    ),
+                                    child: TextField(
+                                      controller: _textController,
+                                      focusNode: _textFieldFocusNode,
+                                      minLines: 1,
+                                      maxLines: 4,
+                                      textCapitalization:
+                                          TextCapitalization.sentences,
+                                      style: const TextStyle(
+                                          color: HomeStyle.textPrimary,
+                                          fontSize: 14),
+                                      decoration: const InputDecoration(
+                                        hintText: 'Message the team...',
+                                        hintStyle: TextStyle(
+                                            color: HomeStyle.textSecondary),
+                                        border: InputBorder.none,
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(
+                                            horizontal: 16, vertical: 12),
+                                      ),
+                                      onTap: () {
+                                        if (_showEmojiPicker) {
+                                          setState(
+                                              () => _showEmojiPicker = false);
+                                        }
+                                      },
+                                      onSubmitted: (_) => _send(conversationId),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                _SendButton(onTap: () => _send(conversationId)),
+                              ],
+                            ),
+                          ),
+                          Offstage(
+                            offstage: !_showEmojiPicker,
+                            child: SizedBox(
+                              height: 280,
+                              child: EmojiPicker(
+                                onEmojiSelected: _onEmojiSelected,
+                                config: const Config(
+                                  height: 280,
+                                  emojiViewConfig: EmojiViewConfig(
+                                    emojiSizeMax: 28,
+                                    backgroundColor: HomeStyle.cardBase,
+                                  ),
+                                  categoryViewConfig: CategoryViewConfig(
+                                    backgroundColor: HomeStyle.cardBase,
+                                    indicatorColor: HomeStyle.purple,
+                                    iconColorSelected: HomeStyle.purple,
+                                    iconColor: HomeStyle.textSecondary,
+                                    backspaceColor: HomeStyle.purple,
+                                    dividerColor: Colors.transparent,
+                                  ),
+                                  bottomActionBarConfig: BottomActionBarConfig(
+                                    backgroundColor: HomeStyle.cardBase,
+                                    buttonColor: HomeStyle.purple,
+                                    buttonIconColor: Colors.white,
+                                  ),
+                                  searchViewConfig: SearchViewConfig(
+                                    backgroundColor: HomeStyle.cardBase,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _Header extends StatelessWidget {
+  const _Header({required this.teamName});
+
+  final String teamName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+      child: Row(
+        children: [
+          _IconButton(
+              icon: Icons.arrow_back_rounded,
+              tooltip: 'Back',
+              onTap: () => context.pop()),
+          const SizedBox(width: 10),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: HomeStyle.brandGradient,
+            ),
+            child: const Icon(Icons.groups_2_rounded,
+                color: Colors.white, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              teamName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 15.5,
+                fontWeight: FontWeight.w700,
+                color: HomeStyle.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IconButton extends StatelessWidget {
+  const _IconButton({required this.icon, required this.tooltip, required this.onTap});
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: tooltip,
+      child: Tooltip(
+        message: tooltip,
+        child: Material(
+          color: HomeStyle.cardBase,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(13),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(13),
+            onTap: onTap,
+            child: SizedBox(
+              width: 40,
+              height: 40,
+              child: Icon(icon, size: 20, color: HomeStyle.textPrimary),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ComposerIconButton extends StatelessWidget {
+  const _ComposerIconButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: HomeStyle.cardBase,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(icon,
+              size: 20,
+              color: onTap == null
+                  ? HomeStyle.textSecondary.withValues(alpha: 0.4)
+                  : HomeStyle.textSecondary),
+        ),
+      ),
+    );
+  }
+}
+
+class _SendButton extends StatelessWidget {
+  const _SendButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Send',
+      child: InkResponse(
+        onTap: onTap,
+        radius: 26,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: HomeStyle.brandGradient,
+            boxShadow: HomeStyle.glow(HomeStyle.purple, opacity: 0.35, blur: 12),
+          ),
+          child: const Icon(Icons.send_rounded, size: 19, color: Colors.white),
+        ),
+      ),
+    );
+  }
+}
+
+class _AttachmentOption extends StatelessWidget {
+  const _AttachmentOption(
+      {required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: HomeStyle.purple),
+      title: Text(label, style: const TextStyle(color: HomeStyle.textPrimary)),
+      onTap: onTap,
     );
   }
 }
@@ -360,11 +585,7 @@ class _TeamMessageBubble extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bubbleColor = isMine
-        ? context.colors.primary
-        : context.colors.surfaceContainerHighest;
-    final textColor =
-        isMine ? context.colors.onPrimary : context.colors.onSurface;
+    final textColor = isMine ? Colors.white : HomeStyle.textPrimary;
     final borderRadius = BorderRadius.only(
       topLeft: const Radius.circular(18),
       topRight: const Radius.circular(18),
@@ -376,7 +597,14 @@ class _TeamMessageBubble extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(vertical: 2),
       constraints:
           BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.72),
-      decoration: BoxDecoration(color: bubbleColor, borderRadius: borderRadius),
+      decoration: BoxDecoration(
+        gradient: isMine ? HomeStyle.brandGradient : null,
+        color: isMine ? null : HomeStyle.cardBase,
+        border: isMine
+            ? null
+            : Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        borderRadius: borderRadius,
+      ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: message.type == MessageType.image && !message.isDeleted
@@ -412,10 +640,17 @@ class _TeamMessageBubble extends ConsumerWidget {
           onLongPress: isMine
               ? () => showModalBottomSheet(
                     context: context,
+                    backgroundColor: HomeStyle.cardBase,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
                     builder: (context) => SafeArea(
                       child: ListTile(
-                        leading: const Icon(Icons.delete_outline),
-                        title: const Text('Delete message'),
+                        leading: const Icon(Icons.delete_outline,
+                            color: HomeStyle.pink),
+                        title: const Text('Delete message',
+                            style: TextStyle(color: HomeStyle.textPrimary)),
                         onTap: () {
                           Navigator.pop(context);
                           ref
@@ -448,8 +683,10 @@ class _TeamMessageBubble extends ConsumerWidget {
                         getDisplayName(ref,
                             profileId: sender!.profileId,
                             mainName: sender!.fullName),
-                        style: context.textStyles.bodySmall
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: HomeStyle.textSecondary),
                       ),
                     ],
                   ),
@@ -495,12 +732,16 @@ class _ImageAttachment extends ConsumerWidget {
       loading: () => const SizedBox(
         width: 160,
         height: 160,
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        child: Center(
+            child:
+                CircularProgressIndicator(strokeWidth: 2, color: HomeStyle.purple)),
       ),
       error: (_, __) => const SizedBox(
         width: 160,
         height: 100,
-        child: Center(child: Icon(Icons.broken_image_outlined)),
+        child: Center(
+            child: Icon(Icons.broken_image_outlined,
+                color: HomeStyle.textSecondary)),
       ),
       data: (url) => GestureDetector(
         onTap: () => Navigator.of(context).push(
@@ -516,12 +757,16 @@ class _ImageAttachment extends ConsumerWidget {
             placeholder: (_, __) => const SizedBox(
               width: 220,
               height: 220,
-              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              child: Center(
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: HomeStyle.purple)),
             ),
             errorWidget: (_, __, ___) => const SizedBox(
               width: 220,
               height: 120,
-              child: Center(child: Icon(Icons.broken_image_outlined)),
+              child: Center(
+                  child: Icon(Icons.broken_image_outlined,
+                      color: HomeStyle.textSecondary)),
             ),
           ),
         ),

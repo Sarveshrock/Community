@@ -9,6 +9,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../intents/presentation/providers/intent_providers.dart';
+import '../../../notifications/presentation/providers/notification_providers.dart';
 import '../../../settings/presentation/providers/app_icon_providers.dart';
 import '../../../posts/presentation/widgets/post_card.dart';
 import '../providers/home_providers.dart';
@@ -45,6 +46,12 @@ class HomeScreen extends ConsumerWidget {
     // device if it isn't already active here (e.g. a fresh install/new
     // device) — a one-time, side-effect-only watch; it renders nothing.
     ref.watch(appIconSyncProvider);
+    // Requests notification permission and registers this device's FCM
+    // token so the notifications already written server-side also reach the
+    // phone's notification bar, not just the in-app Notifications screen —
+    // same one-time, side-effect-only watch pattern as the app-icon sync
+    // above; a no-op wherever Firebase isn't configured for this build.
+    ref.watch(pushNotificationSyncProvider);
 
     final isMobile = Responsive.screenSizeOf(context) == ScreenSize.mobile;
     final hPad = isMobile ? 16.0 : 20.0;

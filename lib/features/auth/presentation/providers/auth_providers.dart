@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/supabase_config.dart';
+import '../../../../core/services/push_notification_service.dart';
+import '../../../notifications/presentation/providers/notification_providers.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -71,6 +73,16 @@ class AuthController extends AsyncNotifier<void> {
 
   Future<void> signOut() async {
     state = const AsyncLoading();
+    // Unregister this device's push token *before* the session ends —
+    // `device_tokens`'s RLS delete policy needs `auth.uid()` to still
+    // resolve, which it won't once signed out. Best-effort: a failure here
+    // (e.g. push was never set up) must never block sign-out itself.
+    final token = await PushNotificationService.currentToken();
+    if (token != null) {
+      await AsyncValue.guard(() => ref
+          .read(notificationControllerProvider.notifier)
+          .unregisterDeviceToken(token));
+    }
     state = await AsyncValue.guard(
         () => ref.read(authRepositoryProvider).signOut());
   }

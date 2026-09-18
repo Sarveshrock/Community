@@ -162,6 +162,104 @@ begin
     insert into jobs (poster_id, company_name, title, description, employment_type, work_mode)
     values (demo_user, 'Demo Company', 'Flutter Developer', 'Sample job listing for local development.', 'full_time', 'remote')
     on conflict do nothing;
+
+    -- A handful of varied, realistic events (the Events list otherwise has
+    -- nothing at all to show on a freshly seeded database) — each with a
+    -- real cover photo via picsum.photos (stable, free, no API key, no
+    -- licensing concerns) so EventCard/EventDetailView show an actual
+    -- image instead of the plain brand-gradient they fall back to when
+    -- cover_image_url is null. Guarded by title like the mock-data
+    -- generator (seed_mock_data_full.sql), not `on conflict`, since events
+    -- has no natural unique key to conflict on besides its random id.
+    if not exists (select 1 from events where host_id = demo_user and title = 'Flutter Builders Meetup') then
+      insert into events (
+        host_id, title, short_description, description, event_type, mode,
+        venue_name, city, location, starts_at, ends_at, is_free, cover_image_url, audience
+      ) values (
+        demo_user, 'Flutter Builders Meetup',
+        'Monthly meetup for Flutter developers building real products.',
+        'Come share what you''re building, swap notes on state management and performance, and meet other Flutter developers in the city. Beginners welcome — bring a laptop if you want to pair.',
+        'meetup', 'offline', 'WeWork Powai', 'Mumbai', 'Mumbai, India',
+        now() + interval '4 days' + interval '18 hours', now() + interval '4 days' + interval '20 hours',
+        true, 'https://picsum.photos/seed/flutter-meetup/800/450',
+        array['Developers', 'Students']
+      );
+    end if;
+
+    if not exists (select 1 from events where host_id = demo_user and title = 'Winter AI & ML Hackathon') then
+      insert into events (
+        host_id, title, short_description, description, event_type, mode,
+        starts_at, ends_at, is_free, cover_image_url, audience, max_participants
+      ) values (
+        demo_user, 'Winter AI & ML Hackathon',
+        '48 hours to build something real with AI — solo or in a team.',
+        'A weekend hackathon open to students and early-career developers. Bring an idea or find a team on arrival — mentors from local startups will be around throughout. Prizes for the top three teams.',
+        'hackathon', 'hybrid',
+        now() + interval '18 days', now() + interval '20 days',
+        true, 'https://picsum.photos/seed/ai-hackathon/800/450',
+        array['Students', 'Developers'], 150
+      );
+    end if;
+
+    if not exists (select 1 from events where host_id = demo_user and title = 'System Design Crash Course') then
+      insert into events (
+        host_id, title, short_description, description, event_type, mode,
+        meeting_platform, starts_at, ends_at, is_free, cover_image_url, audience
+      ) values (
+        demo_user, 'System Design Crash Course',
+        'A practical, no-fluff walkthrough of designing systems that scale.',
+        'Live session covering load balancing, caching, database sharding, and how to talk through a system design interview. Recording shared with everyone who registers.',
+        'webinar', 'online', 'Zoom',
+        now() + interval '2 days' + interval '19 hours', now() + interval '2 days' + interval '20 hours 30 minutes',
+        true, 'https://picsum.photos/seed/system-design/800/450',
+        array['Students', 'Developers', 'Job seekers']
+      );
+    end if;
+
+    if not exists (select 1 from events where host_id = demo_user and title = 'Founders & Funding Night') then
+      insert into events (
+        host_id, title, short_description, description, event_type, mode,
+        venue_name, city, location, starts_at, ends_at, is_free, price, currency, cover_image_url, audience
+      ) values (
+        demo_user, 'Founders & Funding Night',
+        'An evening of conversations with early-stage founders and angel investors.',
+        'Casual networking evening for founders, operators, and anyone curious about early-stage startups in the city. Light food and drinks included in the ticket price.',
+        'networking', 'offline', 'The Executive Centre', 'Bengaluru', 'Bengaluru, India',
+        now() + interval '9 days' + interval '18 hours 30 minutes', now() + interval '9 days' + interval '21 hours',
+        false, 499, 'INR', 'https://picsum.photos/seed/founders-night/800/450',
+        array['Founders', 'Entrepreneurs', 'Professionals']
+      );
+    end if;
+
+    if not exists (select 1 from events where host_id = demo_user and title = 'Flutter vs React Native: The Real Talk') then
+      insert into events (
+        host_id, title, short_description, description, event_type, mode,
+        meeting_platform, starts_at, ends_at, is_free, cover_image_url, audience
+      ) values (
+        demo_user, 'Flutter vs React Native: The Real Talk',
+        'Two engineers who''ve shipped both frameworks compare notes, live.',
+        'An honest, no-marketing comparison of Flutter and React Native from two engineers who''ve taken both to production — performance, tooling, hiring, and where each one actually wins.',
+        'tech_talk', 'online', 'YouTube Live',
+        now() + interval '6 days' + interval '19 hours', now() + interval '6 days' + interval '20 hours',
+        true, 'https://picsum.photos/seed/flutter-vs-rn/800/450',
+        array['Developers', 'Students']
+      );
+    end if;
+
+    if not exists (select 1 from events where host_id = demo_user and title = 'Diwali Tech Mixer 2025') then
+      insert into events (
+        host_id, title, short_description, description, event_type, mode,
+        venue_name, city, location, starts_at, ends_at, is_free, cover_image_url, audience
+      ) values (
+        demo_user, 'Diwali Tech Mixer 2025',
+        'A festive evening meetup for the local tech community.',
+        'A relaxed Diwali-season get-together for the local developer and startup community — good food, good conversation, no pitches.',
+        'community_event', 'offline', 'Cyber Hub', 'Gurugram', 'Gurugram, India',
+        now() - interval '20 days', now() - interval '20 days' + interval '3 hours',
+        true, 'https://picsum.photos/seed/diwali-mixer/800/450',
+        array['Everyone']
+      );
+    end if;
   end if;
 end $$;
 

@@ -265,12 +265,12 @@ begin
   -- Reset-and-recreate on every re-run, same reasoning as Priya's Intent
   -- above: a demo event should always be exactly what this file describes.
   delete from events where host_id = v_rahul_id and title = 'Backend & AI Meetup (Demo)';
-  insert into events (host_id, title, description, event_type, mode, starts_at, ends_at, status, visibility)
+  insert into events (host_id, title, description, event_type, mode, starts_at, ends_at, status, visibility, cover_image_url)
   values (
     v_rahul_id, 'Backend & AI Meetup (Demo)',
     'Demo event seeded for the Communeo Intelligence hackathon walkthrough.',
     'tech_talk', 'online', now() + interval '10 days', now() + interval '10 days' + interval '2 hours',
-    'published', 'public'
+    'published', 'public', 'https://picsum.photos/seed/backend-ai-meetup/800/450'
   ) returning id into v_event_id;
 
   insert into event_attendees (event_id, profile_id) values (v_event_id, v_rahul_id)

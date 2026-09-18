@@ -124,16 +124,70 @@ own Edge Function gateway — it's checked before your code ever runs; the
 the URL nor the anon key is secret — both already ship in the app's own
 `.env` — the Vault secret only exists to protect `SERVICE_FUNCTION_SECRET`.
 
-`FCM_SERVER_KEY` is optional — `send-notification` always writes the in-app
-notification row, and additionally pushes to every device token on file via
-Firebase Cloud Messaging when this is set. Getting real tokens onto those
-rows needs one more piece this repo doesn't include: a Firebase project of
-your own (`google-services.json` / `GoogleService-Info.plist`) wired up with
-the `firebase_messaging` package, calling
-`NotificationController.registerDeviceToken()` — in
-`lib/features/notifications/presentation/providers/notification_providers.dart` —
-with the token it obtains. That's left to you rather than faked here, since
-it needs credentials only you can generate.
+### Push notifications (phone notification bar)
+
+`send-notification` always writes the in-app notification row regardless of
+any of this — everything below only adds the *phone-notification-bar* half
+on top of that, via Firebase Cloud Messaging. The client side
+(`PushNotificationService` in `lib/core/services/push_notification_service.dart`,
+wired into `main.dart` and `HomeScreen`'s `pushNotificationSyncProvider`) and
+the server side (`send-notification`'s `deliverPush`, using the FCM **HTTP
+v1** API) are both already built — what's left is a Firebase project only
+you can create, since it needs your own Google account:
+
+1. **Create a Firebase project** at [console.firebase.google.com](https://console.firebase.google.com)
+   (the free Spark plan is enough — FCM is free at any volume).
+2. **Add an Android app** to it with package name `com.communeo.app.community_app`
+   (matches `android/app/build.gradle.kts`'s `applicationId`). Download the
+   generated `google-services.json` and place it at `android/app/google-services.json`.
+   The Gradle plugin that needs it is already wired up
+   (`android/app/build.gradle.kts`) and only activates once this file exists
+   — no config file, no plugin, no broken build.
+3. **Add an iOS app** to the same project with your bundle id, download
+   `GoogleService-Info.plist`, and add it to `ios/Runner/` **via Xcode**
+   (drag it into the Runner target so it's added to the build, not just the
+   folder). While in Xcode: Signing & Capabilities → **+ Capability** → Push
+   Notifications (this generates `Runner.entitlements` and wires it up —
+   not something this repo can do for you from outside Xcode, and iOS
+   builds need a Mac regardless). You'll also need an APNs Auth Key from
+   your Apple Developer account, uploaded under Firebase Console → Project
+   Settings → Cloud Messaging → Apple app configuration.
+4. **Server credentials**: Firebase Console → Project Settings → Service
+   Accounts → **Generate new private key** downloads a JSON file. Set its
+   *entire contents* as the `FCM_SERVICE_ACCOUNT_JSON` secret on the
+   `send-notification` function (Supabase Dashboard → Edge Functions →
+   send-notification → Secrets, or `supabase secrets set FCM_SERVICE_ACCOUNT_JSON="$(cat service-account.json)"`).
+   This replaces the old `FCM_SERVER_KEY` — Google shut down the legacy
+   `fcm.googleapis.com/fcm/send` API in June 2024, so a key for it wouldn't
+   work even if you had one.
+5. **Rebuild the app** (`flutter clean && flutter run`) — `google-services.json`
+   is read at build time. On first launch after signing in, the OS
+   notification-permission prompt appears and, once granted, this device's
+   token is written to `device_tokens` automatically; nothing else to call
+   by hand.
+
+The Android notification icon uses the app's launcher icon as a placeholder
+(`@mipmap/ic_launcher` in `PushNotificationService`/`AndroidManifest.xml`) —
+functional, but Android's status bar prefers a flat white/transparent
+silhouette. Swap it for a proper one whenever convenient; it's cosmetic only.
+
+**Chat messages** (1-to-1, team, and community — like WhatsApp) push too,
+via a database trigger (`notify_new_message`, `supabase/migrations/0053_message_push_notifications.sql`)
+that calls `send-notification` itself whenever a row is inserted into
+`messages`, the same way every other notification type already fires. It
+needs the exact same placeholder substitution as the `refresh-tech-news`
+cron job above — open that migration file and replace `your-project-ref` /
+`your-anon-public-key` with your real values *before* running
+`supabase db push`. If it's already been pushed with the placeholders
+still in, re-run this against your project to fix it in place (updating a
+function definition, unlike the cron job, needs no "job name" trick — it
+just replaces the old one):
+
+```sql
+create or replace function notify_new_message()
+-- ... paste the corrected function body from the migration file here,
+-- with your real project URL and anon key ...
+```
 
 ## 6. Run the app
 

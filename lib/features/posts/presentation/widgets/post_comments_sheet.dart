@@ -7,6 +7,7 @@ import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/user_avatar.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../connections/presentation/providers/connection_providers.dart';
+import '../../../home/presentation/widgets/home_style.dart';
 import '../providers/post_providers.dart';
 
 /// Comments for one post, in a draggable sheet — opened from `PostCard`'s
@@ -17,6 +18,7 @@ Future<void> showPostCommentsSheet(BuildContext context, String postId) {
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
+    backgroundColor: HomeStyle.background,
     builder: (_) => PostCommentsSheet(postId: postId),
   );
 }
@@ -69,13 +71,20 @@ class _PostCommentsSheetState extends ConsumerState<PostCommentsSheet> {
       builder: (context, scrollController) => Column(
         children: [
           const SizedBox(height: 12),
-          Text('Comments', style: context.textStyles.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          const Text('Comments',
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: HomeStyle.textPrimary)),
           const SizedBox(height: 8),
-          const Divider(height: 1),
+          Container(height: 1, color: Colors.white.withValues(alpha: 0.08)),
           Expanded(
             child: commentsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text(e.toString())),
+              loading: () => const Center(
+                  child: CircularProgressIndicator(color: HomeStyle.purple)),
+              error: (e, _) => Center(
+                  child: Text(e.toString(),
+                      style: const TextStyle(color: HomeStyle.textSecondary))),
               data: (comments) {
                 if (comments.isEmpty) {
                   return const EmptyState(icon: Icons.mode_comment_outlined, title: 'No comments yet');
@@ -103,23 +112,29 @@ class _PostCommentsSheetState extends ConsumerState<PostCommentsSheet> {
                                     Expanded(
                                       child: Text(
                                         getDisplayName(ref, profileId: c.authorId, mainName: c.authorName),
-                                        style: const TextStyle(fontWeight: FontWeight.w600),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 13,
+                                            color: HomeStyle.textPrimary),
                                       ),
                                     ),
                                     Text(
                                       timeago.format(c.createdAt, locale: 'en_short'),
-                                      style: context.textStyles.bodySmall
-                                          ?.copyWith(color: context.colors.onSurfaceVariant),
+                                      style: const TextStyle(
+                                          fontSize: 11, color: HomeStyle.textSecondary),
                                     ),
                                     if (isOwn)
                                       IconButton(
-                                        icon: const Icon(Icons.delete_outline, size: 18),
+                                        icon: const Icon(Icons.delete_outline,
+                                            size: 18, color: HomeStyle.pink),
                                         visualDensity: VisualDensity.compact,
                                         onPressed: () => _delete(c.id),
                                       ),
                                   ],
                                 ),
-                                Text(c.content),
+                                Text(c.content,
+                                    style: const TextStyle(
+                                        fontSize: 13, color: HomeStyle.textPrimary)),
                               ],
                             ),
                           ),
@@ -138,20 +153,57 @@ class _PostCommentsSheetState extends ConsumerState<PostCommentsSheet> {
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      minLines: 1,
-                      maxLines: 4,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(hintText: 'Add a comment...'),
-                      onSubmitted: (_) => _send(),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: HomeStyle.cardBase,
+                        borderRadius: BorderRadius.circular(20),
+                        border:
+                            Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                      ),
+                      child: TextField(
+                        controller: _controller,
+                        minLines: 1,
+                        maxLines: 4,
+                        textCapitalization: TextCapitalization.sentences,
+                        style: const TextStyle(
+                            color: HomeStyle.textPrimary, fontSize: 14),
+                        decoration: const InputDecoration(
+                          hintText: 'Add a comment...',
+                          hintStyle: TextStyle(color: HomeStyle.textSecondary),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding:
+                              EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                        onSubmitted: (_) => _send(),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   _sending
                       ? const SizedBox(
-                          width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                      : IconButton.filled(icon: const Icon(Icons.send_rounded), onPressed: _send),
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: HomeStyle.purple))
+                      : Semantics(
+                          button: true,
+                          label: 'Send',
+                          child: InkResponse(
+                            onTap: _send,
+                            radius: 24,
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: HomeStyle.brandGradient,
+                              ),
+                              child: const Icon(Icons.send_rounded,
+                                  size: 18, color: Colors.white),
+                            ),
+                          ),
+                        ),
                 ],
               ),
             ),
